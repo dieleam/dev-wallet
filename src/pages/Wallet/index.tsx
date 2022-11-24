@@ -2,123 +2,74 @@ import { Box, Flex, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } 
 import { FC, useEffect, useState } from "react";
 import { Pie, PieChart, Tooltip } from "recharts";
 import InputNumber from "../../components/InputNumber";
-import { PieWalletChartProps } from "./types";
+import { InvestmentName, InvestmentType, WalletConfig } from "./types";
 
 interface WalletPageProps { }
 
 const WalletPage: FC<WalletPageProps> = () => {
-    const [fix, setFix] = useState<number>(60)
-    const [action, setAction] = useState<number>(20)
-    const [fii, setFii] = useState<number>(20)
-    const [cripto, setCripto] = useState<number>(0)
-    const [walletConfig, setWalletConfig] = useState<PieWalletChartProps[]>([])
-    const [investment, setInvestment] = useState<PieWalletChartProps[]>([])
-    const [value, setValue] = useState<number>(0)
+    const [walletConfig, setWalletConfig] = useState<WalletConfig[]>([])
+    const [investment, setInvestment] = useState<WalletConfig[]>([])
+    const [value, setValue] = useState<number>(50)
+    const WALLET_CONFIG_LOCAL_KEY = 'wdev:wallet-config'
 
-    const onChangeValue = (field: string, value: number) => {
+    const onChangeValue = (field: InvestmentType, value: number) => {
         if (cannotChange(field, value) === false) {
             return
         }
 
-        let newDataChart = walletConfig.map((el) => {
-            if (el.id === field) {
+        let newConfig = walletConfig.map((el) => {
+            if (el.type === field) {
                 el.value = value
             }
 
             return el
         })
 
-        switch (field) {
-            case 'fix':
-                setFix(value)
-                break;
-            case 'action':
-                setAction(value)
-                break;
-            case 'fii':
-                setFii(value)
-                break;
-            case 'cripto':
-                setCripto(value)
-                break;
-        }
-
-        saveLocalStorage(field, value)
-        setWalletConfig(newDataChart)
+        localStorage.setItem(WALLET_CONFIG_LOCAL_KEY, JSON.stringify(walletConfig))
+        setWalletConfig(newConfig)
     }
 
-    const cannotChange = (field: string, value: number) => {
-        let fixValue = fix
-        let fiiValue = fii
-        let actionValue = action
-        let criptoValue = cripto
+    const cannotChange = (type: InvestmentType, value: number) => {
+        let sum = 0
+        walletConfig.forEach((el) => {
+            if (el.type === type) {
+                el.value = value
+            }
 
-        switch (field) {
-            case 'fix':
-                fixValue = value
-                break;
-            case 'action':
-                actionValue = value
-                break;
-            case 'fii':
-                fiiValue = value
-                break;
-            case 'cripto':
-                criptoValue = value
-                break;
-        }
+            sum += el.value
+        })
 
-        return (fixValue + actionValue + fiiValue + criptoValue) <= 100
+        return sum <= 100
     }
 
-    const mountLocalStorageKey = (key: string): string => {
-        return `option-${key}`
-    }
-
-    const saveLocalStorage = (field: string, value: number) => {
-        localStorage.setItem(mountLocalStorageKey(field), value.toString())
-    }
-
-    const readLocalStorage = (field: string): number => {
-        let value = localStorage.getItem(mountLocalStorageKey(field))
-
-        if (value !== null) {
-            return parseFloat(value)
-        }
-
-        return 0
+    const readValueFromConfig = (type: InvestmentType) => {
+        return walletConfig.find((c) => (c.type === type))?.value || 0
     }
 
     useEffect(() => {
-        let fixValue = readLocalStorage('fix')
-        let fiiValue = readLocalStorage('fii')
-        let actionValue = readLocalStorage('action')
-        let criptoValue = readLocalStorage('cripto')
+        let walletConfigStoraged = localStorage.getItem(WALLET_CONFIG_LOCAL_KEY)
+        let walletParsed: WalletConfig[]
 
-        setFix(fixValue)
-        setFii(fiiValue)
-        setAction(actionValue)
-        setCripto(criptoValue)
+        if (walletConfigStoraged === null || walletConfigStoraged === undefined) {
+            walletParsed = [
+                { type: InvestmentType.ACTION_BR, value: 0, name: InvestmentName[InvestmentType.ACTION_BR] },
+                { type: InvestmentType.ACTION_IN, value: 0, name: InvestmentName[InvestmentType.ACTION_IN] },
+                { type: InvestmentType.FII, value: 0, name: InvestmentName[InvestmentType.FII] },
+                { type: InvestmentType.CRIPTO, value: 0, name: InvestmentName[InvestmentType.CRIPTO] },
+                { type: InvestmentType.FIX, value: 0, name: InvestmentName[InvestmentType.FIX] },
+            ]
+        } else {
+            walletParsed = JSON.parse(walletConfigStoraged)
+        }
 
-        setWalletConfig([
-            { name: 'Renda Fixa', value: fixValue, id: 'fix' },
-            { name: 'FII', value: fiiValue, id: 'fii' },
-            { name: 'Ações', value: actionValue, id: 'action' },
-            { name: 'Criptomoeda', value: criptoValue, id: 'cripto' },
-        ])
-
-        setInvestment([
-            { name: 'Renda Fixa', value: value * (fixValue / 100), id: 'fix' },
-            { name: 'FII', value: fiiValue, id: 'fii' },
-            { name: 'Ações', value: actionValue, id: 'action' },
-            { name: 'Criptomoeda', value: criptoValue, id: 'cripto' },
-        ])
+        setWalletConfig(walletParsed)
     }, [])
 
     useEffect(() => {
         setInvestment(walletConfig.map(el => {
-            return {...el, value: value * (el.value / 100)}
+            return { ...el, value: value * (el.value / 100) }
         }))
+
     }, [value, walletConfig])
 
     return (
@@ -131,63 +82,33 @@ const WalletPage: FC<WalletPageProps> = () => {
                 </Flex>
                 <Flex justifyContent='center'>
                     <Box w="96" flex='1'>
-                        <Text marginBottom='4' fontSize='xl'>Configure sua carteira:</Text>
-                        <Text>Renda Fixa</Text>
-                        <Slider aria-label='slider-ex-1'
-                            defaultValue={60}
-                            value={fix}
-                            onChange={(val) => onChangeValue('fix', val)}
-                        >
-                            <SliderTrack>
-                                <SliderFilledTrack />
-                            </SliderTrack>
-                            <SliderThumb />
-                        </Slider>
-                        <Text>Ações Nacionais</Text>
-                        <Slider aria-label='slider-ex-1'
-                            defaultValue={20}
-                            value={action}
-                            onChange={(val) => onChangeValue('action', val)}
-                        >
-                            <SliderTrack>
-                                <SliderFilledTrack />
-                            </SliderTrack>
-                            <SliderThumb />
-                        </Slider>
-                        <Text>FII</Text>
-                        <Slider aria-label='slider-ex-1'
-                            defaultValue={20}
-                            value={fii}
-                            onChange={(val) => onChangeValue('fii', val)}
-                        >
-                            <SliderTrack>
-                                <SliderFilledTrack />
-                            </SliderTrack>
-                            <SliderThumb />
-                        </Slider>
-                        <Text>Criptomoedas</Text>
-                        <Slider aria-label='slider-ex-1'
-                            defaultValue={0}
-                            value={cripto}
-                            onChange={(val) => onChangeValue('cripto', val)}
-                        >
-                            <SliderTrack>
-                                <SliderFilledTrack />
-                            </SliderTrack>
-                            <SliderThumb />
-                        </Slider>
-                        <Text>Não alocado</Text>
-                        <Slider aria-label='slider-ex-1'
-                            defaultValue={0}
-                            value={cripto}
-                            isDisabled
-                            onChange={(val) => onChangeValue('cripto', val)}
-                        >
-                            <SliderTrack>
-                                <SliderFilledTrack />
-                            </SliderTrack>
-                            <SliderThumb />
-                        </Slider>
+                        {Object.values(InvestmentType).map((type, i) => (
+                            <Box key={i}>
+                                <Text>{InvestmentName[type]}</Text>
+                                <Slider
+                                    defaultValue={60}
+                                    value={readValueFromConfig(type)}
+                                    onChange={(val) => onChangeValue(type, val)}
+                                >
+                                    <SliderTrack>
+                                        <SliderFilledTrack />
+                                    </SliderTrack>
+                                    <SliderThumb />
+                                </Slider>
+                            </Box>
+                        ))}
+                        <Box>
+                            <Text>Não Alocado</Text>
+                            <Slider
+                                isDisabled
+                                value={100 - walletConfig.reduce((acc, cur) => acc + cur.value, 0)}
+                            >
+                                <SliderTrack>
+                                    <SliderFilledTrack />
+                                </SliderTrack>
+                                <SliderThumb />
+                            </Slider>
+                        </Box>
                     </Box>
                     <Box>
                         <PieChart width={400} height={400}>
