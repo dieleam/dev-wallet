@@ -2,6 +2,7 @@ import { Box, Flex, Slider, SliderFilledTrack, SliderThumb, SliderTrack, Text } 
 import { FC, useEffect, useState } from "react";
 import { Pie, PieChart, Tooltip } from "recharts";
 import InputNumber from "../../components/InputNumber";
+import SliderWithNumber from "../../components/SliderWithNumber";
 import { InvestmentName, InvestmentType, WalletConfig } from "./types";
 
 interface WalletPageProps { }
@@ -82,33 +83,36 @@ const WalletPage: FC<WalletPageProps> = () => {
                 </Flex>
                 <Flex justifyContent='center'>
                     <Box w="96" flex='1'>
-                        {Object.values(InvestmentType).map((type, i) => (
-                            <Box key={i}>
-                                <Text>{InvestmentName[type]}</Text>
-                                <Slider
-                                    defaultValue={60}
-                                    value={readValueFromConfig(type)}
-                                    onChange={(val) => onChangeValue(type, val)}
-                                >
-                                    <SliderTrack>
-                                        <SliderFilledTrack />
-                                    </SliderTrack>
-                                    <SliderThumb />
-                                </Slider>
-                            </Box>
-                        ))}
-                        <Box>
-                            <Text>Não Alocado</Text>
-                            <Slider
-                                isDisabled
-                                value={100 - walletConfig.reduce((acc, cur) => acc + cur.value, 0)}
-                            >
-                                <SliderTrack>
-                                    <SliderFilledTrack />
-                                </SliderTrack>
-                                <SliderThumb />
-                            </Slider>
-                        </Box>
+                        <SliderWithNumber value={readValueFromConfig(InvestmentType.FIX)}
+                            title={InvestmentName.FIX}
+                            format={(val) => `${val}%`}
+                            onChange={(val) => onChangeValue(InvestmentType.FIX, val)}
+                            inputW="24" />
+                        <SliderWithNumber value={readValueFromConfig(InvestmentType.ACTION_BR)}
+                            title={InvestmentName.ACTION_BR}
+                            onChange={(val) => onChangeValue(InvestmentType.ACTION_BR, val)}
+                            format={(val) => `${val}%`}
+                            inputW="24" />
+                        <SliderWithNumber value={readValueFromConfig(InvestmentType.FII)}
+                            title={InvestmentName.FII}
+                            onChange={(val) => onChangeValue(InvestmentType.FII, val)}
+                            format={(val) => `${val}%`}
+                            inputW="24" />
+                        <SliderWithNumber value={readValueFromConfig(InvestmentType.ACTION_IN)}
+                            title={InvestmentName.ACTION_IN}
+                            onChange={(val) => onChangeValue(InvestmentType.ACTION_IN, val)}
+                            format={(val) => `${val}%`}
+                            inputW="24" />
+                        <SliderWithNumber value={readValueFromConfig(InvestmentType.CRIPTO)}
+                            title={InvestmentName.CRIPTO}
+                            onChange={(val) => onChangeValue(InvestmentType.CRIPTO, val)}
+                            format={(val) => `${val}%`}
+                            inputW="24" />
+                        <SliderWithNumber value={100 - walletConfig.reduce((acc, cur) => acc + cur.value, 0)}
+                            title="Não Alocado"
+                            inputW="24"
+                            format={(val) => `${val}%`}
+                            isDisabled={true} />
                     </Box>
                     <Box>
                         <PieChart width={400} height={400}>

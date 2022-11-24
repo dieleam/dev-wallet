@@ -4,7 +4,9 @@ import { InputNumberProps } from "./types";
 
 const InputNumber: FC<InputNumberProps> = ({
     onChange,
-    format
+    format,
+    w,
+    value
 }) => {
     const handleChange = (s: string, v: number) => {
         if (onChange !== undefined) {
@@ -21,7 +23,7 @@ const InputNumber: FC<InputNumberProps> = ({
     }
 
     return (
-        <NumberInput onChange={handleChange} format={handleFormat}>
+        <NumberInput onChange={handleChange} format={handleFormat} w={w} defaultValue={value}>
             <NumberInputField />
         </NumberInput>
     )
